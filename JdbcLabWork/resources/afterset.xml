@@ -1,0 +1,8 @@
+<dataset>
+      <USER PK_USER_ID="5" LOGIN="vasya" PASSWORD="qwerty" EMAIL="vas@ya"
+            FIRSTNAME="Vas" LASTNAME="ya" BIRTHDAY="1987-08-23" FK_ROLE_ID="1" />
+      <USER PK_USER_ID="10" LOGIN="igor" PASSWORD="12345" EMAIL="igor@igor"
+            FIRSTNAME="Igorek" LASTNAME="Nikolaev" BIRTHDAY="1961-02-20" FK_ROLE_ID="2" />
+      <ROLE PK_ROLE_ID="1" NAME="admin" />
+      <ROLE PK_ROLE_ID="2" NAME="guest" />
+</dataset>

@@ -1,0 +1,215 @@
+<project name="JdbcLabWork" default="all">
+
+  <property name="src.dir" value="src" />
+  <property name="lib.dir" value="lib" />
+  <property name="build.dir" value="target" />
+  <property name="bin.dir" value="${build.dir}/bin" />
+  <property name="testbin.dir" value="${build.dir}/testbin" />
+  <property name="report.dir" value="${build.dir}/reports" />
+  <property name="cobertura.dir" value="${lib.dir}/cobertura-2.1.1" />
+  <property name="instrumented.dir" value="${build.dir}/instrumented" />
+  <property name="interfaces.dir" value="${bin.dir}/ua/hypson/jdbclab/dao/interfaces" />
+
+  <path id="master-classpath">
+    <fileset dir="${lib.dir}">
+      <include name="*.jar" />
+    </fileset>
+    <pathelement path="${bin.dir}" />
+    <pathelement path="${testbin.dir}" />
+  </path>
+
+  <path id="test-classpath">
+    <fileset dir="${lib.dir}">
+      <include name="*.jar" />
+    </fileset>
+    <pathelement path="${testbin.dir}" />
+  </path>
+
+  <path id="cobertura.classpath">
+    <fileset dir="${cobertura.dir}">
+      <include name="cobertura-2.1.1.jar" />
+      <include name="lib/**/*.jar" />
+    </fileset>
+  </path>
+
+  <path id="pmd.classpath">
+    <fileset dir="${lib.dir}/pmd-bin-4.2.6/lib/">
+      <include name="*.jar" />
+    </fileset>
+  </path>
+
+  <taskdef classpathref="cobertura.classpath" resource="tasks.properties" />
+
+  <taskdef resource="com/puppycrawl/tools/checkstyle/ant/checkstyle-ant-task.properties"
+           classpath="${lib.dir}/checkstyle-6.17-all.jar" />
+
+  <taskdef name="pmd"
+           classname="net.sourceforge.pmd.ant.PMDTask"
+           classpathref="pmd.classpath" />
+
+  <taskdef name="findbugs"
+           classname="edu.umd.cs.findbugs.anttask.FindBugsTask"
+           classpath="${lib.dir}/findbugs-3.0.1/lib/findbugs-ant.jar" />
+
+  <target name="clean"
+          description="Cleans the output directory and delete cobertura.ser">
+    <delete dir="${build.dir}" />
+    <delete file="cobertura.ser" />
+  </target>
+
+  <target name="compile"
+          depends="clean"
+          description="Compiles source code without compiling tests">
+    <mkdir dir="${bin.dir}" />
+    <javac includeantruntime="false"
+           debug="true"
+           debuglevel="vars,lines,source"
+           srcdir="${src.dir}"
+           destdir="${bin.dir}"
+           source="1.8"
+           target="1.8"
+           includes="**/*.java"
+           excludes="**/*Test.java,**/*Usage*.java">
+      <classpath refid="master-classpath" />
+    </javac>
+  </target>
+
+  <target name="testcompile" depends="clean" description="Compiles tests code">
+    <mkdir dir="${testbin.dir}" />
+    <javac includeantruntime="false"
+           srcdir="${src.dir}"
+           destdir="${testbin.dir}"
+           source="1.8"
+           target="1.8"
+           includes="**/*Test.java">
+      <classpath refid="master-classpath" />
+    </javac>
+  </target>
+
+  <target name="jar"
+          depends="compile"
+          description="Makes jar file using compiled source code classes">
+    <jar destfile="${build.dir}/${ant.project.name}.jar"
+         basedir="${bin.dir}"
+         excludes="**/*Usage*.class">
+    </jar>
+  </target>
+
+  <target name="checkstyle"
+          depends="compile,pmd,findbugs"
+          description="Generates a report about code convention violations">
+    <delete dir="${report.dir}/checkstylereport" />
+    <mkdir dir="${report.dir}/checkstylereport" />
+    <checkstyle config="docs/sun_checks.xml" failonviolation="false">
+      <fileset dir="${src.dir}"
+               includes="**/*.java"
+               excludes="**/*Usage*.java, **/*Test.java" />
+      <formatter type="xml"
+                 toFile="${report.dir}/checkstylereport/checkstyle_errors.xml" />
+    </checkstyle>
+    <xslt style="${lib.dir}/checkstyle-noframes-sorted.xsl"
+          in="${report.dir}/checkstylereport/checkstyle_errors.xml"
+          out="${report.dir}/checkstylereport/checkstyle_errors.html" />
+  </target>
+
+  <target name="pmd" description="Generates a PMD report">
+    <delete dir="${report.dir}/pmdreport" />
+    <mkdir dir="${report.dir}/pmdreport" />
+    <pmd rulesetfiles="rulesets/favorites.xml">
+      <formatter type="xml" toFile="${report.dir}/pmdreport/pmd_report.xml" />
+      <fileset dir="${src.dir}">
+        <include name="**/*.java" />
+        <exclude name="**/*Usage*.java" />
+      </fileset>
+    </pmd>
+    <xslt style="${lib.dir}/pmd-bin-4.2.6/etc/xslt/pmd-report-per-class.xslt"
+          in="${report.dir}/pmdreport/pmd_report.xml"
+          out="${report.dir}/pmdreport/pmd_report.html" />
+  </target>
+
+  <target name="findbugs"
+          depends="compile"
+          description="Generates a FindBugs report">
+    <mkdir dir="${report.dir}/findbugsreport" />
+    <findbugs home="${lib.dir}/findbugs-3.0.1"
+              effort="max"
+              output="xml:withMessages"
+              outputFile="${report.dir}/findbugsreport/findbugs.xml">
+      <class location="${bin.dir}" />
+      <sourcepath refid="master-classpath" />
+      <auxclasspath>
+        <fileset dir="${lib.dir}" includes="**/*.jar" />
+      </auxclasspath>
+    </findbugs>
+    <xslt style="${lib.dir}/findbugs-3.0.1/src/xsl/fancy.xsl"
+          in="${report.dir}/findbugsreport/findbugs.xml"
+          out="${report.dir}/findbugsreport/findbugs.html" />
+  </target>
+
+  <target name="cobertura"
+          depends="clean,compile,testcompile,instrument,test"
+          description="Generates a Cobertura test-coverage report">
+    <mkdir dir="${report.dir}/coberturareport" />
+    <cobertura-report format="html"
+                      datafile="${basedir}/cobertura.ser"
+                      destdir="${report.dir}/coberturareport"
+                      srcdir="${src.dir}" />
+  </target>
+
+  <target name="instrument"
+          depends="clean,compile,testcompile"
+          description="Instruments classes with Cobertura to check test-coverage">
+    <delete file="cobertura.ser" />
+    <mkdir dir="${instrumented.dir}" />
+    <cobertura-instrument todir="${instrumented.dir}">
+      <ignore regex="org.apache.log4j.*" />
+      <fileset dir="${bin.dir}">
+        <include name="**/*.class" />
+      </fileset>
+    </cobertura-instrument>
+    <copy file="${interfaces.dir}/RoleDao.class" todir="${instrumented.dir}/ua/hypson/jdbclab/dao/interfaces"/>
+    <copy file="${interfaces.dir}/UserDao.class" todir="${instrumented.dir}/ua/hypson/jdbclab/dao/interfaces"/>
+  </target>
+
+  <target name="test"
+          depends="clean,compile,testcompile,instrument"
+          description="Runs jUnit tests and makes xml report">
+    <mkdir dir="${report.dir}/junitxml" />
+    <junit printsummary="yes" haltonfailure="no">
+      <sysproperty key="net.sourceforge.cobertura.datafile"
+                   file="${basedir}/cobertura.ser" />
+      <classpath>
+        <path refid="test-classpath" />
+        <path refid="cobertura.classpath" />
+        <pathelement path="${instrumented.dir}" />
+        <pathelement path="${testbin.dir}" />
+      </classpath>
+
+      <formatter type="xml" />
+
+      <batchtest fork="yes" todir="${report.dir}/junitxml">
+        <fileset dir="${src.dir}">
+          <include name="**/*Test.java" />
+        </fileset>
+      </batchtest>
+    </junit>
+  </target>
+
+  <target name="testreport"
+          depends="clean,compile,testcompile,instrument,test"
+          description="Generates html report of jUnit testing from xml files">
+    <mkdir dir="${report.dir}/junitreport" />
+    <junitreport todir="${report.dir}/junitxml">
+      <fileset dir="${report.dir}/junitxml">
+        <include name="TEST-*.xml" />
+      </fileset>
+      <report format="frames" todir="${report.dir}/junitreport" />
+    </junitreport>
+  </target>
+
+  <target name="all"
+          description="Makes full build of the project"
+          depends="clean,compile,testcompile,instrument,test,cobertura,testreport,checkstyle,pmd,findbugs,jar">
+  </target>
+
+</project>
