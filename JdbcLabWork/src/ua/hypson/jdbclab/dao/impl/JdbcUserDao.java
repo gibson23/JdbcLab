@@ -4,7 +4,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -13,34 +12,60 @@ import ua.hypson.jdbclab.dao.interfaces.UserDao;
 import ua.hypson.jdbclab.entity.Role;
 import ua.hypson.jdbclab.entity.User;
 import ua.hypson.jdbclab.factory.ConnectionFactory;
-import ua.hypson.jdbclab.factory.UserFactory;
 
-public class JdbcUserDao extends ConnectionFactory implements UserDao {
+public class JdbcUserDao implements UserDao {
 
-  private boolean checkIfExists(User user) {
+  private ConnectionFactory factory;
 
-    Connection connection = super.createConnection();
+  public JdbcUserDao() {
+    factory = ConnectionFactory.getFactory();
+  }
 
+  protected static interface Callback {
+    Object makeSqlQuery(Connection connection, PreparedStatement statement) throws SQLException;
+  }
+
+  protected final Object executeCallback(Callback call) {
+    Connection connection = factory.createConnection();
     PreparedStatement statement = null;
     try {
-      statement = connection.prepareStatement("SELECT * FROM USER WHERE PK_USER_ID = ?");
-      statement.setLong(1, user.getId());
-
-      ResultSet rs = statement.executeQuery();
-      if (rs.next()) {
-        return true;
-      }
+      return call.makeSqlQuery(connection, statement);
     } catch (SQLException e) {
       throw new RuntimeException(e);
     } finally {
       try {
-        statement.close();
-        connection.close();
+        if (statement != null) {
+          statement.close();
+        }
+        if (connection != null) {
+          connection.close();
+        }
       } catch (SQLException e) {
         throw new RuntimeException(e);
       }
     }
-    return false;
+  }
+
+  private void checkNullUser(User user) {
+    if (null == user) {
+      throw new RuntimeException("Null user is unacceptable");
+    }
+  }
+
+  private Boolean checkIfExists(User user) {
+    return (Boolean) executeCallback(new Callback() {
+      @Override
+      public Object makeSqlQuery(Connection connection, PreparedStatement statement) throws SQLException {
+        statement = connection.prepareStatement("SELECT * FROM USER WHERE PK_USER_ID = ?");
+        statement.setLong(1, user.getId());
+
+        ResultSet rs = statement.executeQuery();
+        if (rs.next()) {
+          return Boolean.TRUE;
+        }
+        return Boolean.FALSE;
+      }
+    });
   }
 
   @SuppressWarnings({ "deprecation" })
@@ -50,184 +75,129 @@ public class JdbcUserDao extends ConnectionFactory implements UserDao {
 
   @Override
   public void create(User user) {
-    if (null == user) {
-      throw new RuntimeException("Null user is unacceptable");
-    }
+    checkNullUser(user);
     if (checkIfExists(user)) {
       throw new RuntimeException("There already is user with id" + user.getId());
     }
-    Connection connection = super.createConnection();
-    PreparedStatement statement = null;
-    try {
-      statement = connection.prepareStatement("INSERT INTO user"
-          + " (PK_USER_ID, LOGIN, PASSWORD, EMAIL, FIRSTNAME, LASTNAME, BIRTHDAY) VALUES (?, ?, ?, ?, ?, ?, ?)");
-      statement.setLong(1, user.getId());
-      statement.setString(2, user.getLogin());
-      statement.setString(3, user.getPassword());
-      statement.setString(4, user.getEmail());
-      statement.setString(5, user.getFirstName());
-      statement.setString(6, user.getLastName());
-      statement.setString(7, dateToString(user.getBirthday()));
-      statement.execute();
-    } catch (SQLException e) {
-      throw new RuntimeException(e);
-    } finally {
-      try {
-        statement.close();
-        connection.close();
-      } catch (SQLException e) {
-        throw new RuntimeException(e);
+    executeCallback(new Callback() {
+
+      @Override
+      public Object makeSqlQuery(Connection connection, PreparedStatement statement) throws SQLException {
+        statement = connection.prepareStatement("INSERT INTO user"
+            + " (PK_USER_ID, LOGIN, PASSWORD, EMAIL, FIRSTNAME, LASTNAME, BIRTHDAY) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        statement.setLong(1, user.getId());
+        statement.setString(2, user.getLogin());
+        statement.setString(3, user.getPassword());
+        statement.setString(4, user.getEmail());
+        statement.setString(5, user.getFirstName());
+        statement.setString(6, user.getLastName());
+        statement.setString(7, dateToString(user.getBirthday()));
+        statement.execute();
+        return null;
       }
-    }
+    });
   }
 
   @Override
   public void update(User user) {
-    if (null == user) {
-      throw new RuntimeException("Null user is unacceptable");
-    }
+    checkNullUser(user);
     if (!checkIfExists(user)) {
       throw new RuntimeException("There is no user with id" + user.getId());
     }
-    Connection connection = super.createConnection();
-    PreparedStatement statement = null;
-    try {
-      statement = connection.prepareStatement("UPDATE USER SET LOGIN = ?, PASSWORD = ?, EMAIL = ?,"
-          + "FIRSTNAME = ?, LASTNAME = ?, BIRTHDAY = ? WHERE PK_USER_ID = ?");
-      statement.setString(1, user.getLogin());
-      statement.setString(2, user.getPassword());
-      statement.setString(3, user.getEmail());
-      statement.setString(4, user.getFirstName());
-      statement.setString(5, user.getLastName());
-      statement.setString(6, dateToString(user.getBirthday()));
-      statement.setLong(7, user.getId());
-      statement.executeUpdate();
-    } catch (SQLException e) {
-      throw new RuntimeException(e);
-    } finally {
-      try {
-        statement.close();
-        connection.close();
-      } catch (SQLException e) {
-        throw new RuntimeException(e);
+    executeCallback(new Callback() {
+      @Override
+      public Object makeSqlQuery(Connection connection, PreparedStatement statement) throws SQLException {
+        statement = connection.prepareStatement("UPDATE USER SET LOGIN = ?, PASSWORD = ?, EMAIL = ?,"
+            + "FIRSTNAME = ?, LASTNAME = ?, BIRTHDAY = ? WHERE PK_USER_ID = ?");
+        statement.setString(1, user.getLogin());
+        statement.setString(2, user.getPassword());
+        statement.setString(3, user.getEmail());
+        statement.setString(4, user.getFirstName());
+        statement.setString(5, user.getLastName());
+        statement.setString(6, dateToString(user.getBirthday()));
+        statement.setLong(7, user.getId());
+        statement.executeUpdate();
+        return null;
       }
-    }
-
+    });
   }
 
   @Override
   public void remove(User user) {
-    if (null == user) {
-      throw new RuntimeException("Null user is unacceptable");
-    }
+    checkNullUser(user);
     if (!checkIfExists(user)) {
       throw new RuntimeException("There is no user with id" + user.getId());
     }
-    Connection connection = super.createConnection();
-    PreparedStatement statement = null;
-    try {
-      statement = connection.prepareStatement("DELETE FROM USER WHERE PK_USER_ID = ?");
-      statement.setLong(1, user.getId());
-      statement.execute();
-    } catch (SQLException e) {
-      throw new RuntimeException(e);
-    } finally {
-      try {
-        statement.close();
-        connection.close();
-      } catch (SQLException e) {
-        throw new RuntimeException(e);
-      }
-    }
+    executeCallback(new Callback() {
 
+      @Override
+      public Object makeSqlQuery(Connection connection, PreparedStatement statement) throws SQLException {
+        statement = connection.prepareStatement("DELETE FROM USER WHERE PK_USER_ID = ?");
+        statement.setLong(1, user.getId());
+        statement.execute();
+        return null;
+      }
+    });
   }
 
   @Override
   public List<User> findAll() {
     List<User> users = new ArrayList<>();
-    Connection connection = super.createConnection();
-    Statement statement = null;
-    try {
-      statement = connection.createStatement();
-
-      ResultSet rs = statement.executeQuery("SELECT * FROM USER");
-      while (rs.next()) {
-        User user = UserFactory.createUser(rs.getLong(1), rs.getString(2), rs.getString(3), rs.getString(4),
-            rs.getString(5), rs.getString(6), rs.getDate(7));
-        users.add(user);
+    executeCallback(new Callback() {
+      @Override
+      public Object makeSqlQuery(Connection connection, PreparedStatement statement) throws SQLException {
+        statement = connection.prepareStatement("SELECT * FROM USER");
+        ResultSet rs = statement.executeQuery();
+        while (rs.next()) {
+          User user = User.createUser(rs.getLong(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5),
+              rs.getString(6), rs.getDate(7));
+          users.add(user);
+        }
+        return null;
       }
-    } catch (SQLException e) {
-      throw new RuntimeException(e);
-    } finally {
-      try {
-        statement.close();
-        connection.close();
-      } catch (SQLException e) {
-        throw new RuntimeException(e);
-      }
-    }
+    });
     return users;
   }
 
   @Override
   public User findByLogin(String login) {
-    Connection connection = super.createConnection();
-    PreparedStatement statement = null;
-    try {
-      statement = connection.prepareStatement("SELECT * FROM USER WHERE LOGIN = ?");
-      statement.setString(1, login);
-      ResultSet rs = statement.executeQuery();
-
-      if (rs.next()) {
-        User user = UserFactory.createUser(rs.getLong(1), rs.getString(2), rs.getString(3), rs.getString(4),
-            rs.getString(5), rs.getString(6), rs.getDate(7));
-        return user;
+    return (User) executeCallback(new Callback() {
+      @Override
+      public Object makeSqlQuery(Connection connection, PreparedStatement statement) throws SQLException {
+        statement = connection.prepareStatement("SELECT * FROM USER WHERE LOGIN = ?");
+        statement.setString(1, login);
+        ResultSet rs = statement.executeQuery();
+        if (rs.next()) {
+          User user = User.createUser(rs.getLong(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5),
+              rs.getString(6), rs.getDate(7));
+          return user;
+        }
+        return null;
       }
-    } catch (SQLException e) {
-      throw new RuntimeException(e);
-    } finally {
-      try {
-        statement.close();
-        connection.close();
-      } catch (SQLException e) {
-        throw new RuntimeException(e);
-      }
-    }
-    return null;
+    });
   }
 
   @Override
   public User findByEmail(String email) {
-    Connection connection = super.createConnection();
-    PreparedStatement statement = null;
-    try {
-      statement = connection.prepareStatement("SELECT * FROM USER WHERE EMAIL = ?");
-      statement.setString(1, email);
-      ResultSet rs = statement.executeQuery();
-
-      if (rs.next()) {
-        User user = UserFactory.createUser(rs.getLong(1), rs.getString(2), rs.getString(3), rs.getString(4),
-            rs.getString(5), rs.getString(6), rs.getDate(7));
-        return user;
+    return (User) executeCallback(new Callback() {
+      @Override
+      public Object makeSqlQuery(Connection connection, PreparedStatement statement) throws SQLException {
+        statement = connection.prepareStatement("SELECT * FROM USER WHERE EMAIL = ?");
+        statement.setString(1, email);
+        ResultSet rs = statement.executeQuery();
+        if (rs.next()) {
+          User user = User.createUser(rs.getLong(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5),
+              rs.getString(6), rs.getDate(7));
+          return user;
+        }
+        return null;
       }
-    } catch (SQLException e) {
-      throw new RuntimeException(e);
-    } finally {
-      try {
-        statement.close();
-        connection.close();
-      } catch (SQLException e) {
-        throw new RuntimeException(e);
-      }
-    }
-    return null;
+    });
   }
 
   @Override
   public void setUserRole(User user, Role role) {
-    if (null == user) {
-      throw new RuntimeException("Null user is unacceptable");
-    }
+    checkNullUser(user);
     if (null == role) {
       throw new RuntimeException("Null role is unacceptable");
     }
@@ -237,29 +207,26 @@ public class JdbcUserDao extends ConnectionFactory implements UserDao {
     if (!(new JdbcRoleDao().checkRole(role))) {
       throw new RuntimeException("There is no role with id" + role.getId());
     }
-    Connection connection = super.createConnection();
-    PreparedStatement statement = null;
-    try {
-      statement = connection.prepareStatement("UPDATE USER SET FK_ROLE_ID = ? WHERE PK_USER_ID = ?");
-      statement.setLong(1, role.getId());
-      statement.setLong(2, user.getId());
-      statement.execute();
-    } catch (SQLException e) {
-      throw new RuntimeException(e);
-    } finally {
-      try {
-        statement.close();
-        connection.close();
-      } catch (SQLException e) {
-        throw new RuntimeException(e);
+    executeCallback(new Callback() {
+      @Override
+      public Object makeSqlQuery(Connection connection, PreparedStatement statement) throws SQLException {
+        statement = connection.prepareStatement("UPDATE USER SET FK_ROLE_ID = ? WHERE PK_USER_ID = ?");
+        statement.setLong(1, role.getId());
+        statement.setLong(2, user.getId());
+        statement.execute();
+        return null;
       }
-    }
+    });
   }
 
   @Override
   public Role getUserRole(User user) {
+    checkNullUser(user);
+    if (!checkIfExists(user)) {
+      throw new RuntimeException("There is no user with id" + user.getId());
+    }
     Long fk_role_id = null;
-    Connection connection = super.createConnection();
+    Connection connection = factory.createConnection();
     PreparedStatement statement2 = null;
     PreparedStatement statement = null;
     try {
@@ -292,5 +259,4 @@ public class JdbcUserDao extends ConnectionFactory implements UserDao {
       }
     }
   }
-
 }

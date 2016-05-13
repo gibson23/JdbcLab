@@ -18,9 +18,17 @@ public class ConnectionFactory extends AbstractJdbcDao {
   private static BasicDataSource dataSource;
   private static Properties properties;
   private static String propertiesPath;
+  private static ConnectionFactory factory;
 
   public static void setPropertiesPath(String path) {
     propertiesPath = path;
+  }
+
+  public static ConnectionFactory getFactory() {
+    if (factory == null) {
+      factory = new ConnectionFactory();
+    }
+    return factory;
   }
 
   public static Properties loadProperties() {
@@ -37,14 +45,12 @@ public class ConnectionFactory extends AbstractJdbcDao {
   }
 
   private void initializeDataSource() {
-
     properties = loadProperties();
     dataSource = new BasicDataSource();
     dataSource.setDriverClassName(properties.getProperty("driver"));
     dataSource.setUsername(properties.getProperty("username"));
     dataSource.setPassword(properties.getProperty("password"));
     dataSource.setUrl(properties.getProperty("url"));
-
   }
 
   @Override
@@ -52,14 +58,10 @@ public class ConnectionFactory extends AbstractJdbcDao {
     if (dataSource == null) {
       initializeDataSource();
     }
-    Connection connection = null;
     try {
-      connection = dataSource.getConnection();
+      return dataSource.getConnection();
     } catch (SQLException e) {
-      System.out.println("catch");
       throw new RuntimeException(e);
     }
-    return connection;
   }
-
 }

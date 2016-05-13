@@ -1,4 +1,4 @@
-package ua.hypson.jdbclab.test;
+package ua.hypson.jdbclab.dao.impl;
 
 import java.io.File;
 import java.sql.Connection;
@@ -17,16 +17,13 @@ import org.dbunit.dataset.xml.FlatXmlDataSetBuilder;
 import org.dbunit.ext.h2.H2DataTypeFactory;
 import org.junit.Test;
 
-import ua.hypson.jdbclab.dao.impl.JdbcRoleDao;
-import ua.hypson.jdbclab.dao.impl.JdbcUserDao;
 import ua.hypson.jdbclab.dao.interfaces.RoleDao;
 import ua.hypson.jdbclab.dao.interfaces.UserDao;
 import ua.hypson.jdbclab.entity.Role;
 import ua.hypson.jdbclab.entity.User;
 import ua.hypson.jdbclab.factory.ConnectionFactory;
-import ua.hypson.jdbclab.factory.UserFactory;
 
-public class DaoJdbcTest extends DBTestCase {
+public class JdbcUserDaoTest extends DBTestCase {
 
   private UserDao userDao;
   private RoleDao roleDao;
@@ -58,7 +55,7 @@ public class DaoJdbcTest extends DBTestCase {
     }
   }
 
-  public DaoJdbcTest(String name) {
+  public JdbcUserDaoTest(String name) {
     super(name);
     userDao = new JdbcUserDao();
     roleDao = new JdbcRoleDao();
@@ -90,7 +87,7 @@ public class DaoJdbcTest extends DBTestCase {
     assertEquals(10L, (long) extractedUser.getId());
     assertEquals("Igorek", extractedUser.getFirstName());
     @SuppressWarnings("deprecation")
-    User addingUser = UserFactory.createUser(50L, "gri", "poiu", "grisha2000@mail.ru", "Grigoriy", "Skovoroda",
+    User addingUser = User.createUser(50L, "gri", "poiu", "grisha2000@mail.ru", "Grigoriy", "Skovoroda",
         new Date(1920, 7, 13));
 
     userDao.create(addingUser);
@@ -110,18 +107,6 @@ public class DaoJdbcTest extends DBTestCase {
     Role extractedRole = userDao.getUserRole(extractedUser);
     assertEquals("guest", extractedRole.getName());
 
-  }
-
-  @Test
-  public void testRoleDao() throws Exception {
-    Role extractedRole = roleDao.findByName("admin");
-    assertEquals(1L, extractedRole.getId().longValue());
-
-    extractedRole.setName("president");
-    System.out.println(extractedRole);
-    roleDao.update(extractedRole);
-    extractedRole = roleDao.findByName("president");
-    assertEquals(1L, extractedRole.getId().longValue());
   }
 
   @Test

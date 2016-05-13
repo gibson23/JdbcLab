@@ -6,6 +6,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Date;
+import java.util.List;
 
 import org.dbunit.DatabaseUnitException;
 import org.h2.tools.Server;
@@ -17,12 +18,11 @@ import ua.hypson.jdbclab.dao.interfaces.UserDao;
 import ua.hypson.jdbclab.entity.Role;
 import ua.hypson.jdbclab.entity.User;
 import ua.hypson.jdbclab.factory.ConnectionFactory;
-import ua.hypson.jdbclab.factory.UserFactory;
 
 public class Usage {
 
   private static void createTables() throws DatabaseUnitException, FileNotFoundException, IOException {
-    ConnectionFactory factory = new ConnectionFactory();
+    ConnectionFactory factory = ConnectionFactory.getFactory();
     Connection conn = factory.createConnection();
     Statement stmt;
     try {
@@ -59,15 +59,20 @@ public class Usage {
     roleDao.create(role);
     @SuppressWarnings("deprecation")
     Date date = new Date(1987, 5, 9);
-    User user2 = UserFactory.createUser(20L, "pipka221", "kota", "lexus212@co.uk", "je", "Sus", date);
+    User user2 = User.createUser(20L, "pipka221", "kota", "lexus212@co.uk", "je", "Sus", date);
 
     UserDao userDao = new JdbcUserDao();
     userDao.create(user2);
-    // List<User> list = userDao.findAll();
-    // System.out.println(list);
+    user2 = User.createUser(21L, "pipka222", "kota", "lexus213@co.uk", "je", "Sus", date);
+    userDao.create(user2);
+    user2 = User.createUser(22L, "pipka223", "kota", "lexus214@co.uk", "je", "Sus", date);
+    userDao.create(user2);
+    user2 = User.createUser(23L, "pipka224", "kota", "lexus215@co.uk", "je", "Sus", date);
+    userDao.create(user2);
+    List<User> list = userDao.findAll();
+    System.out.println(list);
     // }
     System.out.println(userDao.findByEmail("jesus@co.uk"));
-    System.out.println(userDao.findAll());
     userDao.setUserRole(user2, role);
     System.out.println(userDao.getUserRole(user2));
     System.out.println(roleDao.findByName("pti4ka"));

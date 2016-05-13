@@ -12,6 +12,19 @@ public class User {
   private String lastName;
   private Date birthday;
 
+  public static User createUser(Long id, String login, String password, String email, String firstName, String lastName,
+      Date birthday) {
+    User user = new User();
+    user.setId(id);
+    user.setLogin(login);
+    user.setPassword(password);
+    user.setEmail(email);
+    user.setFirstName(firstName);
+    user.setLastName(lastName);
+    user.setBirthday(birthday);
+    return user;
+  }
+
   public Long getId() {
     return id;
   }
@@ -79,12 +92,8 @@ public class User {
     final int prime = 31;
     int result = 1;
     result = (prime * result) + ((birthday == null) ? 0 : birthday.hashCode());
-    result = (prime * result) + ((email == null) ? 0 : email.hashCode());
-    result = (prime * result) + ((firstName == null) ? 0 : firstName.hashCode());
     result = (prime * result) + ((id == null) ? 0 : id.hashCode());
-    result = (prime * result) + ((lastName == null) ? 0 : lastName.hashCode());
     result = (prime * result) + ((login == null) ? 0 : login.hashCode());
-    result = (prime * result) + ((password == null) ? 0 : password.hashCode());
     return result;
   }
 
@@ -107,20 +116,6 @@ public class User {
     } else if (!birthday.equals(other.birthday)) {
       return false;
     }
-    if (email == null) {
-      if (other.email != null) {
-        return false;
-      }
-    } else if (!email.equals(other.email)) {
-      return false;
-    }
-    if (firstName == null) {
-      if (other.firstName != null) {
-        return false;
-      }
-    } else if (!firstName.equals(other.firstName)) {
-      return false;
-    }
     if (id == null) {
       if (other.id != null) {
         return false;
@@ -128,25 +123,11 @@ public class User {
     } else if (!id.equals(other.id)) {
       return false;
     }
-    if (lastName == null) {
-      if (other.lastName != null) {
-        return false;
-      }
-    } else if (!lastName.equals(other.lastName)) {
-      return false;
-    }
     if (login == null) {
       if (other.login != null) {
         return false;
       }
     } else if (!login.equals(other.login)) {
-      return false;
-    }
-    if (password == null) {
-      if (other.password != null) {
-        return false;
-      }
-    } else if (!password.equals(other.password)) {
       return false;
     }
     return true;
