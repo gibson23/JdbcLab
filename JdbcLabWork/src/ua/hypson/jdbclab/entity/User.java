@@ -1,6 +1,6 @@
 package ua.hypson.jdbclab.entity;
 
-import java.util.Date;
+import java.sql.Date;
 
 public class User {
 
@@ -11,9 +11,10 @@ public class User {
   private String firstName;
   private String lastName;
   private Date birthday;
+  private Role role;
 
   public static User createUser(Long id, String login, String password, String email, String firstName, String lastName,
-      Date birthday) {
+      Date birthday, Role role) {
     User user = new User();
     user.setId(id);
     user.setLogin(login);
@@ -22,6 +23,7 @@ public class User {
     user.setFirstName(firstName);
     user.setLastName(lastName);
     user.setBirthday(birthday);
+    user.setRole(role);
     return user;
   }
 
@@ -81,10 +83,35 @@ public class User {
     this.birthday = (Date) birthday.clone();
   }
 
+  public Role getRole() {
+    return role;
+  }
+
+  public void setRole(Role role) {
+    this.role = role;
+  }
+
   @Override
   public String toString() {
-    return "User [id=" + id + ", login=" + login + ", password=" + password + ", email=" + email + ", firstName="
-        + firstName + ", lastName=" + lastName + ", birthday=" + birthday + "]";
+    StringBuilder builder = new StringBuilder();
+    builder.append("User [id=");
+    builder.append(id);
+    builder.append(", login=");
+    builder.append(login);
+    builder.append(", password=");
+    builder.append(password);
+    builder.append(", email=");
+    builder.append(email);
+    builder.append(", firstName=");
+    builder.append(firstName);
+    builder.append(", lastName=");
+    builder.append(lastName);
+    builder.append(", birthday=");
+    builder.append(birthday);
+    builder.append(", role=");
+    builder.append(role);
+    builder.append("]");
+    return builder.toString();
   }
 
   @Override

@@ -5,8 +5,11 @@ public class Role {
   private Long id;
   private String name;
 
-  public Role() {
-
+  public static final Role getDefaultRole() {
+    Role role = new Role();
+    role.setId(0L);
+    role.setName("default");
+    return role;
   }
 
   public Long getId() {
@@ -27,7 +30,13 @@ public class Role {
 
   @Override
   public String toString() {
-    return "Role [id=" + id + ", name=" + name + "]";
+    StringBuilder builder = new StringBuilder();
+    builder.append("Role [id=");
+    builder.append(id);
+    builder.append(", name=");
+    builder.append(name);
+    builder.append("]");
+    return builder.toString();
   }
 
   @Override

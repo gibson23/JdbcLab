@@ -38,6 +38,7 @@ public class JdbcRoleDaoTest extends DBTestCase {
       stmt.execute("DROP TABLE IF EXISTS ROLE");
       stmt.execute(
           "CREATE TABLE IF NOT EXISTS ROLE " + "(PK_ROLE_ID BIGINT PRIMARY KEY, NAME VARCHAR(255) NOT NULL UNIQUE)");
+      stmt.execute("INSERT INTO ROLE (PK_ROLE_ID, NAME) VALUES (0, 'default')");
       stmt.execute("DROP TABLE IF EXISTS USER");
       stmt.execute("CREATE TABLE IF NOT EXISTS USER "
           + "(PK_USER_ID BIGINT PRIMARY KEY, LOGIN VARCHAR(255) NOT NULL UNIQUE, PASSWORD VARCHAR(255) NOT NULL, EMAIL VARCHAR(255) NOT NULL UNIQUE,"
@@ -65,7 +66,7 @@ public class JdbcRoleDaoTest extends DBTestCase {
     config.setProperty(DatabaseConfig.PROPERTY_DATATYPE_FACTORY, new H2DataTypeFactory());
   }
 
-  @Test
+  @Test(timeout = 100)
   public void testRoleDao() throws Exception {
     Role extractedRole = roleDao.findByName("admin");
     assertEquals(1L, extractedRole.getId().longValue());
@@ -74,6 +75,27 @@ public class JdbcRoleDaoTest extends DBTestCase {
     roleDao.update(extractedRole);
     extractedRole = roleDao.findByName("president");
     assertEquals(1L, extractedRole.getId().longValue());
+
+    Role newRole = new Role();
+    newRole.setId(1000L);
+    newRole.setName("super");
+    roleDao.create(newRole);
+    extractedRole = roleDao.findById(1000L);
+    assertEquals(newRole, extractedRole);
+  }
+
+  @Test(expected = RuntimeException.class, timeout = 100)
+  public void testGetNonexistentRole() throws Exception {
+    roleDao.findByName("noSuchRole");
+  }
+
+  @Test(expected = RuntimeException.class, timeout = 100)
+  public void testRoleRemove() throws Exception {
+    Role admin = new Role();
+    admin.setId(1L);
+    admin.setName("admin");
+    roleDao.remove(admin);
+    roleDao.findByName("admin");
   }
 
 }

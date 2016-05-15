@@ -2,7 +2,6 @@ package ua.hypson.jdbclab.dao.interfaces;
 
 import java.util.List;
 
-import ua.hypson.jdbclab.entity.Role;
 import ua.hypson.jdbclab.entity.User;
 
 public interface UserDao {
@@ -18,9 +17,5 @@ public interface UserDao {
   public User findByLogin(String login);
 
   public User findByEmail(String email);
-
-  public void setUserRole(User user, Role role);
-
-  public Role getUserRole(User user);
 
 }

@@ -2,9 +2,9 @@ package ua.hypson.jdbclab.dao.impl;
 
 import java.io.File;
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Date;
 import java.util.Properties;
 
 import org.dbunit.Assertion;
@@ -45,6 +45,7 @@ public class JdbcUserDaoTest extends DBTestCase {
       stmt.execute("DROP TABLE IF EXISTS ROLE");
       stmt.execute(
           "CREATE TABLE IF NOT EXISTS ROLE " + "(PK_ROLE_ID BIGINT PRIMARY KEY, NAME VARCHAR(255) NOT NULL UNIQUE)");
+      stmt.execute("INSERT INTO ROLE (PK_ROLE_ID, NAME) VALUES (0, 'default')");
       stmt.execute("DROP TABLE IF EXISTS USER");
       stmt.execute("CREATE TABLE IF NOT EXISTS USER "
           + "(PK_USER_ID BIGINT PRIMARY KEY, LOGIN VARCHAR(255) NOT NULL UNIQUE, PASSWORD VARCHAR(255) NOT NULL, EMAIL VARCHAR(255) NOT NULL UNIQUE,"
@@ -73,7 +74,7 @@ public class JdbcUserDaoTest extends DBTestCase {
     config.setProperty(DatabaseConfig.PROPERTY_DATATYPE_FACTORY, new H2DataTypeFactory());
   }
 
-  @Test
+  @Test(timeout = 100)
   public void testUserDao() throws Exception {
     User extractedUser = userDao.findByEmail("igor@igor");
     assertEquals("Igorek", extractedUser.getFirstName());
@@ -86,9 +87,14 @@ public class JdbcUserDaoTest extends DBTestCase {
     extractedUser = userDao.findByLogin("igor");
     assertEquals(10L, (long) extractedUser.getId());
     assertEquals("Igorek", extractedUser.getFirstName());
+
+  }
+
+  @Test(timeout = 100)
+  public void testUserCreate() throws Exception {
     @SuppressWarnings("deprecation")
     User addingUser = User.createUser(50L, "gri", "poiu", "grisha2000@mail.ru", "Grigoriy", "Skovoroda",
-        new Date(1920, 7, 13));
+        new Date(20, 5, 5), Role.getDefaultRole());
 
     userDao.create(addingUser);
 
@@ -103,17 +109,14 @@ public class JdbcUserDaoTest extends DBTestCase {
     userDao.remove(addingUser);
     extractedCreatedUser = userDao.findByLogin("gri");
     assertNull(extractedCreatedUser);
-
-    Role extractedRole = userDao.getUserRole(extractedUser);
-    assertEquals("guest", extractedRole.getName());
-
   }
 
-  @Test
+  @Test(timeout = 100)
   public void testRoleOfUser() throws Exception {
     User user = userDao.findByLogin("vasya");
     Role role = roleDao.findByName("admin");
-    userDao.setUserRole(user, role);
+    user.setRole(role);
+    userDao.update(user);
 
     IDataSet databaseDataSet = getConnection().createDataSet();
     ITable actualTable = databaseDataSet.getTable("USER");

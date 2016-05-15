@@ -12,4 +12,6 @@ public interface RoleDao {
 
   public Role findByName(String name);
 
+  public Role findById(Long id);
+
 }
